@@ -20,7 +20,7 @@ t3_model = None
 # Mensaje de advertencia para consola sobre Git LFS
 LFS_WARNING = """
 ================================================================================
-❌ ERROR DE CARGA DE MODELOS: Git LFS (Git Large File Storage) no activo
+[ERROR] DE CARGA DE MODELOS: Git LFS (Git Large File Storage) no activo
 ================================================================================
 No se han podido cargar correctamente los modelos locales de la carpeta 'models/'.
 
@@ -44,7 +44,7 @@ try:
         print(f"Cargando modelo T2 local desde: {t2_model_path}")
         t2_tokenizer = AutoTokenizer.from_pretrained(t2_model_path)
         t2_model = AutoModelForSequenceClassification.from_pretrained(t2_model_path)
-        print("✅ Modelo T2 cargado correctamente.")
+        print("[OK] Modelo T2 cargado correctamente.")
     else:
         print(f"Advertencia: No se encontró la ruta del modelo T2 en: {t2_model_path}")
         print(LFS_WARNING)
@@ -60,7 +60,7 @@ try:
     if os.path.exists(t3_model_path):
         print(f"Cargando modelo T3 local desde: {t3_model_path}")
         t3_model = CrossEncoder(t3_model_path)
-        print("✅ Modelo T3 cargado correctamente.")
+        print("[OK] Modelo T3 cargado correctamente.")
     else:
         print(f"Advertencia: No se encontró la ruta del modelo T3 en: {t3_model_path}")
         print(LFS_WARNING)
