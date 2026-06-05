@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foro E-Learning Simulado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">EduAI Forum</div>
+            <div class="status-badge" id="aiStatus">Modelos NLP: Activos</div>
+        </header>
+
+        <main class="main-content">
+            <!-- Banner de Error Git LFS -->
+            <div class="error-banner" id="lfsErrorBanner" style="display: none;">
+                <div class="error-banner-icon">⚠️</div>
+                <div class="error-banner-content">
+                    <h3>Atención: Git LFS Requerido</h3>
+                    <p>Los modelos de procesamiento de lenguaje natural locales no se han podido cargar correctamente. Esto suele ocurrir porque el repositorio se clonó sin activar Git LFS, lo que hace que los archivos de pesos sean solo punteros de texto.</p>
+                    <p class="instructions">Para solucionarlo, instala Git LFS, ejecuta en tu terminal: <code>git lfs install</code> y <code>git lfs pull</code>, y luego reinicia esta aplicación.</p>
+                </div>
+            </div>
+
+            <!-- Sección del Profesor -->
+            <section class="teacher-section glass-panel">
+                <div class="section-header">
+                    <h2>Pregunta del Profesor</h2>
+                    <span class="badge teacher-badge">Profesor</span>
+                </div>
+                <div class="question-box">
+                    <p><strong>Pregunta:</strong> What are the main differences between batch processing and stream processing?</p>
+                </div>
+                <div class="ideal-answer-box">
+                    <h4>Rúbrica / Respuesta Ideal (Oculta para alumnos)</h4>
+                    <textarea id="idealAnswerInput" class="ideal-textarea">Batch processing processes large volumes of static data at scheduled intervals, which is useful for historical reporting but has high latency. On the other hand, stream processing analyzes data in motion in real-time with low latency, ideal for fraud detection and constant monitoring. Batch focuses on high throughput, while stream focuses on low latency.</textarea>
+                </div>
+            </section>
+
+            <div class="split-layout">
+                <!-- Foro de Alumnos -->
+                <section class="forum-section glass-panel">
+                    <h2>Respuestas de Alumnos</h2>
+                    
+                    <div class="comments-list" id="commentsList">
+                        <!-- Comentarios simulados pre-cargados se inyectan por JS -->
+                    </div>
+
+                    <div class="add-comment-box">
+                        <h3>Añadir Nueva Respuesta</h3>
+                        <input type="text" id="newAuthorName" placeholder="Nombre del alumno (ej. María)">
+                        <textarea id="newCommentText" placeholder="Escribe tu respuesta aquí..." rows="4"></textarea>
+                        <button id="addCommentBtn" class="primary-btn">Publicar Respuesta</button>
+                    </div>
+                </section>
+
+                <!-- Panel de Evaluación -->
+                <section class="evaluation-section glass-panel">
+                    <h2>Evaluación IA (T2 + T3)</h2>
+                    <p class="subtitle">Filtro de Toxicidad y Ranking Automático</p>
+                    
+                    <button id="evaluateBtn" class="primary-btn evaluate-btn">
+                        <span>🚀 Ejecutar Pipeline IA</span>
+                    </button>
+                    
+                    <div class="results-container" id="resultsContainer" style="display: none;">
+                        <h3>Ranking de Mejores Respuestas (T3)</h3>
+                        <div class="ranking-list" id="rankingList"></div>
+
+                        <h3>Comentarios Filtrados por Toxicidad (T2)</h3>
+                        <div class="blocked-list" id="blockedList"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
