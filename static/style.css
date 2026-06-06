@@ -370,3 +370,157 @@ h2 {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Nuevos Estilos para Evaluación Integrada */
+.forum-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 1rem;
+}
+
+.forum-title-area {
+    flex: 1;
+    min-width: 280px;
+}
+
+.forum-title-area h2 {
+    margin-bottom: 0.25rem;
+}
+
+.forum-title-area .subtitle {
+    margin-bottom: 0;
+}
+
+.forum-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.evaluate-btn-inline {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25);
+    white-space: nowrap;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
+}
+
+.sort-controls {
+    display: flex;
+    gap: 0.5rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.action-btn {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.5);
+    transform: translateY(-1px);
+}
+
+.action-btn.secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    border-color: var(--glass-border);
+}
+
+.action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+/* Globos de Comentario Evaluados */
+.comment-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.comment-card.rank-high {
+    border-left: 4px solid var(--success);
+    background: rgba(16, 185, 129, 0.03);
+}
+
+.comment-card.rank-medium {
+    border-left: 4px solid var(--warning);
+    background: rgba(245, 158, 11, 0.03);
+}
+
+.comment-card.rank-low {
+    border-left: 4px solid var(--danger);
+    background: rgba(239, 68, 68, 0.03);
+}
+
+.score-badge-inline {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.25rem;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.score-badge-inline.rank-high { background: var(--success); }
+.score-badge-inline.rank-medium { background: var(--warning); }
+.score-badge-inline.rank-low { background: var(--danger); }
+
+/* Comentarios Bloqueados */
+.comment-card.comment-blocked {
+    border-left: 4px solid var(--danger);
+    background: rgba(239, 68, 68, 0.02);
+    position: relative;
+}
+
+.danger-badge {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.25rem;
+}
+
+.text-blur {
+    filter: blur(4px);
+    opacity: 0.3;
+    user-select: none;
+    pointer-events: none;
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.reveal-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+    border: 1px solid var(--glass-border);
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.reveal-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+

@@ -42,21 +42,59 @@ let comments = [
     }
 ];
 
-// Renderizar comentarios en el foro
+// Renderizar comentarios en el foro con sus evaluaciones
 function renderComments() {
     const list = document.getElementById('commentsList');
     list.innerHTML = '';
     
-    comments.forEach(c => {
+    comments.forEach((c, index) => {
         const div = document.createElement('div');
         div.className = 'comment-card';
-        div.innerHTML = `
-            <div class="comment-author">${c.author}</div>
-            <div class="comment-text">${c.text}</div>
-        `;
+        
+        let evaluationHTML = '';
+        if (c.blocked) {
+            div.classList.add('comment-blocked');
+            evaluationHTML = `
+                <span class="danger-badge">⚠️ ${c.reason}</span>
+            `;
+            div.innerHTML = `
+                <div class="comment-header-row">
+                    <div class="comment-author">${c.author} <span style="color:var(--danger)">[Filtrado]</span></div>
+                    ${evaluationHTML}
+                </div>
+                <div class="comment-text">${c.text}</div>
+            `;
+        } else if (c.score !== undefined) {
+            let rankClass = 'rank-low';
+            if (c.score >= 60) {
+                rankClass = 'rank-high';
+            } else if (c.score >= 30) {
+                rankClass = 'rank-medium';
+            }
+            div.classList.add(rankClass);
+            
+            evaluationHTML = `
+                <span class="score-badge-inline ${rankClass}">Nota: ${c.score.toFixed(1)}%</span>
+            `;
+            
+            div.innerHTML = `
+                <div class="comment-header-row">
+                    <div class="comment-author">${c.author}</div>
+                    ${evaluationHTML}
+                </div>
+                <div class="comment-text">${c.text}</div>
+            `;
+        } else {
+            div.innerHTML = `
+                <div class="comment-author">${c.author}</div>
+                <div class="comment-text">${c.text}</div>
+            `;
+        }
+        
         list.appendChild(div);
     });
 }
+
 
 // Añadir nuevo comentario
 document.getElementById('addCommentBtn').addEventListener('click', () => {
@@ -76,10 +114,17 @@ document.getElementById('addCommentBtn').addEventListener('click', () => {
     
     authorInput.value = '';
     textInput.value = '';
-    renderComments();
     
-    // Ocultar resultados previos si se añade un comentario nuevo
-    document.getElementById('resultsContainer').style.display = 'none';
+    // Ocultar ordenamiento y resetear estados cuando hay comentarios nuevos no evaluados
+    document.getElementById('sortControls').style.display = 'none';
+    comments.forEach((c, idx) => {
+        c.originalIndex = idx;
+        delete c.score;
+        delete c.blocked;
+        delete c.reason;
+    });
+    
+    renderComments();
 });
 
 // Ejecutar Pipeline IA
@@ -88,7 +133,7 @@ document.getElementById('evaluateBtn').addEventListener('click', async () => {
     const idealAnswer = document.getElementById('idealAnswerInput').value;
     
     btn.classList.add('loading');
-    btn.innerHTML = '<span>⏳ Evaluando con T2 y T3...</span>';
+    btn.innerHTML = '<span>⏳ Evaluando con IA...</span>';
     
     try {
         const response = await fetch('/api/evaluate', {
@@ -109,8 +154,33 @@ document.getElementById('evaluateBtn').addEventListener('click', async () => {
             return;
         }
         
-        renderResults(data.ranked, data.blocked);
-        document.getElementById('resultsContainer').style.display = 'block';
+        // Mapear resultados de vuelta a nuestros comentarios locales
+        comments.forEach((c, index) => {
+            if (c.originalIndex === undefined) {
+                c.originalIndex = index;
+            }
+            
+            // Buscar si está en blocked
+            const blockedMatch = data.blocked.find(b => b.text === c.text);
+            if (blockedMatch) {
+                c.blocked = true;
+                c.reason = blockedMatch.reason;
+                c.score = undefined;
+            } else {
+                // Buscar si está en ranked
+                const rankedMatch = data.ranked.find(r => r.text === c.text);
+                if (rankedMatch) {
+                    c.blocked = false;
+                    c.score = rankedMatch.score;
+                    c.reason = undefined;
+                }
+            }
+        });
+        
+        // Mostrar controles de ordenamiento
+        document.getElementById('sortControls').style.display = 'flex';
+        renderComments();
+        
     } catch (error) {
         alert("Error al conectar con el servidor IA.");
         console.error(error);
@@ -120,55 +190,24 @@ document.getElementById('evaluateBtn').addEventListener('click', async () => {
     }
 });
 
-// Renderizar resultados de la IA
-function renderResults(ranked, blocked) {
-    const rankedList = document.getElementById('rankingList');
-    const blockedList = document.getElementById('blockedList');
-    
-    rankedList.innerHTML = '';
-    blockedList.innerHTML = '';
-    
-    if (ranked.length === 0) {
-        rankedList.innerHTML = '<p class="subtitle">No hay respuestas válidas.</p>';
-    } else {
-        ranked.forEach((item, index) => {
-            let rankClass = 'rank-low';
-            if (item.score >= 60) {
-                rankClass = 'rank-high';
-            } else if (item.score >= 30) {
-                rankClass = 'rank-medium';
-            }
-            
-            const div = document.createElement('div');
-            div.className = `ranked-item ${rankClass}`;
-            div.innerHTML = `
-                <div class="score-badge">#${index + 1}</div>
-                <div class="ranked-content">
-                    <h4>${item.author}</h4>
-                    <p>${item.text}</p>
-                </div>
-            `;
-            rankedList.appendChild(div);
-        });
-    }
-    
-    if (blocked.length === 0) {
-        blockedList.innerHTML = '<p class="subtitle">No se detectó toxicidad.</p>';
-    } else {
-        blocked.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'blocked-item';
-            div.innerHTML = `
-                <div class="ranked-content">
-                    <h4>${item.author} <span style="color:var(--danger)">[Bloqueado]</span></h4>
-                    <p>${item.text}</p>
-                    <div class="blocked-reason">⚠️ ${item.reason}</div>
-                </div>
-            `;
-            blockedList.appendChild(div);
-        });
-    }
-}
+// Controles de Ordenamiento
+document.getElementById('sortByScoreBtn').addEventListener('click', () => {
+    comments.sort((a, b) => {
+        const scoreA = a.score !== undefined ? a.score : -1;
+        const scoreB = b.score !== undefined ? b.score : -1;
+        return scoreB - scoreA;
+    });
+    renderComments();
+});
+
+document.getElementById('sortByOriginalBtn').addEventListener('click', () => {
+    comments.sort((a, b) => {
+        const idxA = a.originalIndex !== undefined ? a.originalIndex : 0;
+        const idxB = b.originalIndex !== undefined ? b.originalIndex : 0;
+        return idxA - idxB;
+    });
+    renderComments();
+});
 
 // Comprobar estado de los modelos locales
 async function checkModelStatus() {
