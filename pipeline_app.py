@@ -1,6 +1,9 @@
 import os
 import torch
 import numpy as np
+import pickle
+import re
+import string
 from flask import Flask, request, jsonify, render_template
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from sentence_transformers.cross_encoder import CrossEncoder
@@ -13,6 +16,8 @@ MODELS_DIR = os.path.join(BASE_DIR, "models")
 
 # --- CARGA DE MODELOS ---
 
+t1_vectorizer = None
+t1_model = None
 t2_tokenizer = None
 t2_model = None
 t3_model = None
@@ -36,6 +41,28 @@ Para solucionar este problema:
 3. Vuelve a iniciar la aplicación Flask.
 ================================================================================
 """
+
+# Modelo T1: Detección de Idioma
+t1_model_dir = os.path.join(MODELS_DIR, "T1_tfidf_ngramas")
+t1_model_path = os.path.join(t1_model_dir, "mejor_modelo_T1.pkl")
+t1_vectorizer_path = os.path.join(t1_model_dir, "vectorizador_tfidf_T1.pkl")
+
+try:
+    if os.path.exists(t1_model_path) and os.path.exists(t1_vectorizer_path):
+        print(f"Cargando modelo T1 local desde: {t1_model_dir}")
+        with open(t1_vectorizer_path, 'rb') as f:
+            t1_vectorizer = pickle.load(f)
+        with open(t1_model_path, 'rb') as f:
+            t1_model = pickle.load(f)
+        print("[OK] Modelo T1 cargado correctamente.")
+    else:
+        print(f"Advertencia: No se encontraron los archivos del modelo T1 en: {t1_model_dir}")
+        print(LFS_WARNING)
+except Exception as e:
+    print(f"Error cargando el modelo T1 local: {e}")
+    print(LFS_WARNING)
+    t1_vectorizer = None
+    t1_model = None
 
 # Modelo T2: Detección de Toxicidad
 t2_model_path = os.path.join(MODELS_DIR, "T2_xlm-roberta_toxic_densas", "final_model")
@@ -68,6 +95,52 @@ except Exception as e:
     print(f"Error cargando el modelo T3 local: {e}")
     print(LFS_WARNING)
     t3_model = None
+
+
+# Funciones de preprocesamiento para T1:
+
+def convertir_minusculas(texto):
+    return texto.lower()
+
+def eliminar_puntuacion(texto):
+    translator = str.maketrans('', '', string.punctuation)
+    return texto.translate(translator)
+
+def eliminar_numeros(texto):
+    return re.sub(r'\d+', '', texto)
+
+def eliminar_espacios_extra(texto):
+    return re.sub(r'\s+', ' ', texto).strip()
+
+def preprocesar_comentario(texto):
+    # Aplicamos transformaciones básicas
+    texto = convertir_minusculas(texto)
+    texto = eliminar_puntuacion(texto)
+    texto = eliminar_numeros(texto)
+    texto_limpio = eliminar_espacios_extra(texto)
+    return texto_limpio
+
+# Mapeo de códigos de idioma a nombres legibles
+IDIOMAS_MAP = {
+    'en': 'Inglés',
+    'es': 'Español',
+    'fr': 'Francés',
+    'it': 'Italiano',
+    'pt': 'Portugués'
+}
+
+def detect_language(text: str) -> str:
+    """Retorna el idioma detectado utilizando el modelo T1."""
+    if t1_model is None or t1_vectorizer is None:
+        return "en"
+    
+    texto_limpio = preprocesar_comentario(text)
+    if not texto_limpio:
+        texto_limpio = text
+        
+    features = t1_vectorizer.transform([texto_limpio])
+    lang = t1_model.predict(features)[0]
+    return str(lang)
 
 
 def is_toxic(text: str) -> bool:
@@ -114,7 +187,11 @@ def index():
 
 @app.route("/api/status", methods=["GET"])
 def get_status():
-    models_loaded = t2_model is not None and t2_tokenizer is not None and t3_model is not None
+    models_loaded = (
+        t1_model is not None and t1_vectorizer is not None and
+        t2_model is not None and t2_tokenizer is not None and
+        t3_model is not None
+    )
     return jsonify({
         "models_loaded": models_loaded,
         "message": "Modelos cargados correctamente." if models_loaded else "Error: Los modelos no están cargados. Recuerda activar Git LFS."
@@ -122,9 +199,9 @@ def get_status():
 
 @app.route("/api/evaluate", methods=["POST"])
 def evaluate_comments():
-    if t2_model is None or t2_tokenizer is None or t3_model is None:
+    if t1_model is None or t1_vectorizer is None or t2_model is None or t2_tokenizer is None or t3_model is None:
         return jsonify({
-            "error": "Los modelos de IA (T2 o T3) no se han cargado correctamente. Esto ocurre porque el repositorio se clonó sin activar Git LFS (Git Large File Storage), lo que hace que los archivos de los modelos (.safetensors) sean incorrectos o falten. Por favor, instala Git LFS, ejecuta 'git lfs install' y 'git lfs pull' en el directorio del proyecto, y reinicia el servidor.",
+            "error": "Los modelos de IA (T1, T2 o T3) no se han cargado correctamente. Esto ocurre porque el repositorio se clonó sin activar Git LFS (Git Large File Storage), lo que hace que los archivos de los modelos (.safetensors o .pkl) sean incorrectos o falten. Por favor, instala Git LFS, ejecuta 'git lfs install' y 'git lfs pull' en el directorio del proyecto, y reinicia el servidor.",
             "lfs_error": True
         }), 503
 
@@ -135,11 +212,26 @@ def evaluate_comments():
     ranked_comments = []
     blocked_comments = []
     
+    # Detectamos el idioma de la respuesta ideal para filtrar las de los alumnos
+    ideal_lang = detect_language(ideal_answer)
+    nombre_lang_ideal = IDIOMAS_MAP.get(ideal_lang, ideal_lang.upper())
+    
     for comment in comments:
         text = comment.get("text", "")
         author = comment.get("author", "Anónimo")
         
-        # 1. Filtro de Toxicidad (T2)
+        # 1. Filtro de Idioma (T1)
+        lang_alumno = detect_language(text)
+        if lang_alumno != ideal_lang:
+            nombre_lang_alumno = IDIOMAS_MAP.get(lang_alumno, lang_alumno.upper())
+            blocked_comments.append({
+                "author": author,
+                "text": text,
+                "reason": f"Bloqueado por idioma no admitido (Detectado: {nombre_lang_alumno}, se requiere: {nombre_lang_ideal})."
+            })
+            continue
+            
+        # 2. Filtro de Toxicidad (T2)
         toxic = is_toxic(text)
         
         if toxic:
@@ -149,7 +241,7 @@ def evaluate_comments():
                 "reason": "Bloqueado por violar normas de comunidad (Toxicidad)."
             })
         else:
-            # 2. Evaluación de Respuesta (T3)
+            # 3. Evaluación de Respuesta (T3)
             score = score_answer(ideal_answer, text)
             ranked_comments.append({
                 "author": author,
