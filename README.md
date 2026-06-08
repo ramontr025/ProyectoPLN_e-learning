@@ -97,7 +97,7 @@ Sigue estos pasos detallados para entrenar los modelos y ejecutar el pipeline in
 
 ### Paso 1: Clonación y Preparación del Entorno (Requiere Git LFS)
 
-Este repositorio almacena los pesos de los modelos de Deep Learning utilizando **Git LFS (Git Large File Storage)**. Antes de clonar el repositorio, debes tener instalado Git LFS en tu sistema para asegurar que los archivos grandes de pesos (`*.safetensors`) se descarguen correctamente en lugar de descargarse como punteros de texto.
+Este repositorio almacena los pesos de los modelos de Deep Learning utilizando **Git LFS (Git Large File Storage)**. Antes de clonar el repositorio, debes tener instalado Git LFS en tu sistema para asegurar que los archivos grandes de pesos (`*.safetensors`) se descarguen correctamente en lugar de descargarse como punteros de texto. Al descargar los modelos el proceso de clonación del repositorio con git lfs puede tardar varios minutos, recomendamos tener paciencia.
 
 1. **Instalar Git LFS** (si aún no lo tienes):
    - Descárgalo e instálalo desde [git-lfs.github.com](https://git-lfs.github.com/) o usa un gestor de paquetes.
