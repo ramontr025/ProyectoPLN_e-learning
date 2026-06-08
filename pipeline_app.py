@@ -165,21 +165,15 @@ def is_toxic(text: str) -> bool:
     return toxic_prob >= THRESHOLD
 
 def score_answer(ideal_text: str, student_text: str) -> float:
-    """Retorna una puntuación de similitud semántica normalizada (0.0 a 1.0)."""
+    """Retorna la puntuación original de similitud semántica sin normalizar."""
     if t3_model is None:
-        return np.random.uniform(0.1, 0.9)
+        return float(np.random.uniform(0.60, 0.68))
     
     score = t3_model.predict([ideal_text, student_text])
     if isinstance(score, list) or isinstance(score, np.ndarray):
         score = score[0]
     
-    # El modelo local predice valores comprimidos en la zona de [0.60, 0.68].
-    # Normalizamos linealmente para expandir el rango a [0.0, 1.0] para la UI.
-    min_val = 0.60
-    max_val = 0.68
-    normalized = (score - min_val) / (max_val - min_val)
-    
-    return float(np.clip(normalized, 0.0, 1.0))
+    return float(score)
 
 @app.route("/")
 def index():
@@ -246,7 +240,7 @@ def evaluate_comments():
             ranked_comments.append({
                 "author": author,
                 "text": text,
-                "score": round(score * 100, 2)  # Convertimos a formato 0-100 para UI
+                "score": round(score, 4)  # Devuelve el score original sin normalizar (4 decimales)
             })
             
     # Ordenamos el ranking de mayor a menor puntuación

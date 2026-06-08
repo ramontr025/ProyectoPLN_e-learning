@@ -66,15 +66,15 @@ function renderComments() {
             `;
         } else if (c.score !== undefined) {
             let rankClass = 'rank-low';
-            if (c.score >= 60) {
+            if (c.score >= 0.65) {
                 rankClass = 'rank-high';
-            } else if (c.score >= 30) {
+            } else if (c.score >= 0.62) {
                 rankClass = 'rank-medium';
             }
             div.classList.add(rankClass);
             
             evaluationHTML = `
-                <span class="score-badge-inline ${rankClass}">Nota: ${c.score.toFixed(1)}%</span>
+                <span class="score-badge-inline ${rankClass}">Puesto #${c.rank}</span>
             `;
             
             div.innerHTML = `
@@ -120,6 +120,7 @@ document.getElementById('addCommentBtn').addEventListener('click', () => {
     comments.forEach((c, idx) => {
         c.originalIndex = idx;
         delete c.score;
+        delete c.rank;
         delete c.blocked;
         delete c.reason;
     });
@@ -166,12 +167,14 @@ document.getElementById('evaluateBtn').addEventListener('click', async () => {
                 c.blocked = true;
                 c.reason = blockedMatch.reason;
                 c.score = undefined;
+                c.rank = undefined;
             } else {
                 // Buscar si está en ranked
-                const rankedMatch = data.ranked.find(r => r.text === c.text);
-                if (rankedMatch) {
+                const rankedIndex = data.ranked.findIndex(r => r.text === c.text);
+                if (rankedIndex !== -1) {
                     c.blocked = false;
-                    c.score = rankedMatch.score;
+                    c.score = data.ranked[rankedIndex].score;
+                    c.rank = rankedIndex + 1;
                     c.reason = undefined;
                 }
             }
